@@ -4,6 +4,9 @@
 const http = require('http');
 const app = require('./app');
 
+const cors = require('cors');
+app.use(cors());
+
 //set portkey
 app.set('port', process.env.PORT || 3000);
 
