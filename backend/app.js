@@ -2,20 +2,19 @@
 //mongodb+srv://Aaron:<password>@clusterp6.4lgnl.mongodb.net/?retryWrites=true&w=majority
 
 //import framework
-//const e = require('express');
 const express = require('express');
 
 const app = express();
-//Modern body parser technique
-//Pword and Usernam entry on front end need to capture the data as POST req
-//JSON data part of req. body
+
 app.use(express.json());
+
+
 
 const mongoose = require('mongoose');
 const sauces = require('./models/sauces');
 
 const saucesRoutes = require('./routes/sauces')
-
+const path = require('path');
 //import router into app
 const userRoutes = require('./routes/user');
 //const usersSchema = require('./models/user');
@@ -37,6 +36,8 @@ app.use((req, res, next) => {
     next();
 });
 
+app.use('/images', express.static(path.join(__dirname, 'images')));
+
 app.use('/api/sauces', saucesRoutes);
 //requestds are going to api/auth - and then going ton userRoutes
 //register
@@ -44,4 +45,4 @@ app.use('/api/auth', userRoutes);
 
 
 //access it outside this file
-module.exports = app
+module.exports = app;

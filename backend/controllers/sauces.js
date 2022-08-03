@@ -1,15 +1,26 @@
 const Sauce = require('../models/sauces');
+//const auth = require('../middleware/auth');
+//const jwt = require('jsonwebtoken');
 
 exports.createSauce = (req, res, next) => {
-    const sauce = new Sauce({
-        name: req.body.name,
-        manufacturer: req.body.manufacturer,
-        description: req.body.description,
-        heat: req.body.heat,
-        userId: req.auth.userId,
-        imageUrl: req.body.imageUrl
+    //req.protocol = http: + :// + localhost:3000
+    //convert data to JSON 
+    req.body.sauce = JSON.parse(req.body.sauce);
+    const url = req.protocol + '://' + req.get('host');
+    const newSauce = new Sauce({
+        name: req.body.sauce.name,
+        manufacturer: req.body.sauce.manufacturer,
+        description: req.body.sauce.description,
+        heat: req.body.sauce.heat,
+        //likes: req.body.likes,
+        //dislikes: req.body.likes,
+        imageUrl: url + '/images/' + req.file.filename,
+        mainPepper: req.body.sauce.mainPepper,
+        //usersLiked: req.body.usersLiked,
+        //usersDisliked: req.body.usersDisliked,
+        userId: req.body.sauce.userId
     });
-    sauce.save().then(
+    newSauce.save().then(
         //front end res
         //always when handling http req
         () => {
@@ -26,6 +37,7 @@ exports.createSauce = (req, res, next) => {
     );
 }
 
+/*
 exports.getOneSauce = (req, res, next) => {
     Sauce.findOne({
         _id: req.params.id
@@ -41,6 +53,7 @@ exports.getOneSauce = (req, res, next) => {
         }
     );
 }
+*/
 
 exports.SaucesList = (req, res, next) => {
     Sauce.find().then(
@@ -55,4 +68,5 @@ exports.SaucesList = (req, res, next) => {
         }
     );
 }
+
 
