@@ -10,7 +10,7 @@ plugin is used to ensure their uniqueness and report errors.
 
 const usersSchema = mongoose.Schema({
     //unique prevents duplication
-    email: { type: String, required: true, unique: true },
+    email: { type: String, required: true, unique: true }, //working
     password: {type: String, required: true}
 });
 
