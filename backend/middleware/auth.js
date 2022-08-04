@@ -5,6 +5,8 @@ module.exports = (req, res, next) => {
         const token = req.headers.authorization.split(' ')[1];
         const decodedToken = jwt.verify(token, 'RANDOM_VERY_LONG_VERY_CRYPTIC_TOKEN');
         const userId = decodedToken.userId; //extract user id
+        //every subsequent piece of middleware, we'll get userId from the token
+        req.auth = { userId: userId }
         if (req.body.userId && req.body.userId !== userId) {
             throw 'Invalid user ID';
         } else {
