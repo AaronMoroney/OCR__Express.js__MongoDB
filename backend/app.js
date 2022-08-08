@@ -11,7 +11,7 @@ app.use(express.json());
 
 
 const mongoose = require('mongoose');
-const sauces = require('./models/sauces');
+//const sauces = require('./models/sauces');
 
 const saucesRoutes = require('./routes/sauces')
 const path = require('path');
@@ -39,7 +39,7 @@ app.use((req, res, next) => {
 app.use('/images', express.static(path.join(__dirname, 'images')));
 
 app.use('/api/sauces', saucesRoutes);
-//requestds are going to api/auth - and then going ton userRoutes
+//requests are going to api/auth - and then going to userRoutes
 //register
 app.use('/api/auth', userRoutes);
 

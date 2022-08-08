@@ -56,6 +56,10 @@ exports.getOneSauce = (req, res, next) => {
     );
 }
 
+/*
+** !! BUG - cannot edit, or assign correctly usersLiked / disLiked !!
+*/
+
 //delete
 exports.deleteSauce = (req, res, next) => {
     //grab the thing from the database 
@@ -109,5 +113,60 @@ exports.SaucesList = (req, res, next) => {
         }
     );
 }
+
+
+exports.sauceLike = (req, res, next) => {
+    //get one sauce using param_id
+    Sauce.findOne({_id: req.params.id}).then(
+        //returns sauce
+        (sauce) => {
+            console.log('Got Body:', req.body); // working
+            if (req.body.like === -1 && !sauce.usersDisliked.includes(req.body.userId)) {
+                sauce.usersDisliked.push(sauce.userId); //working
+                console.log('like = -1:', sauce);
+                res.status(200).json(sauce);
+            } else if (req.body.like === 1 && !sauce.usersLiked.includes(req.body.userId)) {
+                sauce.usersLiked.push(sauce.userId); //working
+                console.log('like = 1:', sauce);
+                res.status(200).json(sauce);
+            } else if (req.body.like === 0) {
+                res.status(200).json(sauce);
+                console.log('will be deleted', sauce);
+            } else {
+                console.log('error');
+            }
+        }
+    )
+}
+
+
+/*
+exports.sauceLike = (req, res, next) => {
+    //get one sauce using param_id
+    Sauce.findOne({_id: req.params.id}).then(
+        //returns sauce
+        (sauce) => {
+        console.log('Got Body:', req.body); // working
+            //JSON.parse(req.body.sauce);
+            if ( req.body.like === 0 && sauce.usersLiked.includes(req.params.Id)) {
+            //get index of the user id and splice from the index
+                let index = sauce.usersLiked.indexOf(sauce.userId);
+                //if result is true
+                if (index != -1) {
+                    sauce.usersLiked.splice(index, 1);
+                }
+            console.log('like = 0:', sauce.usersLiked);
+            //if like = 1 and user isn't in the usersliked array
+            } else if ( req.body.like === 1 && sauce.usersLiked.includes(req.params.Id) ) {
+                //push the userId into the array
+                sauce.usersLiked.push(sauce.userId); //working
+                console.log('like = 1:', sauce);
+            }
+            res.status(200).json(sauce);
+        }
+    )
+}
+*/
+
 
 
