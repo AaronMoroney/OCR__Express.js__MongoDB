@@ -1,7 +1,14 @@
 const Sauce = require('../models/sauces');
+const fs = require('fs');
+
 //save a new sauce 
 exports.createSauce = (req, res, next) => {
+    //because to send file, frontend sends as form, req.body.sauce
+    //is string, so we turn it into JSON
+    //parse now workable as JSON 
     req.body.sauce = JSON.parse(req.body.sauce);
+    //don't have rest of url for filename, onlny that of the img
+    //req protocal, http, create the string
     const url = req.protocol + '://' + req.get('host');
     const newSauce = new Sauce({
         name: req.body.sauce.name,
@@ -56,25 +63,26 @@ exports.getOneSauce = (req, res, next) => {
 exports.deleteSauce = (req, res, next) => {
     //grab the thing from the database 
     //same as single get route
-    Sauce.findOne({_id: req.params.id}).then(
-        //returns sauce
+    Sauce.findOne({ _id: req. params.id }).then(
         (sauce) => {
+        const filename = sauce.imageUrl.split('/images/')[1]; 
+        fs.unlink('images/' + filename, () => {
             //no such thing
-          if (!sauce) {
+            if (!sauce) {
             //return;
             res.status(404).json({
                 error: new Error('no such thing')
             });
-          }
-          //if the userid of thing is the same
-          //as user form the token
-          if(sauce.userId !== req.auth.userId) {
+            }
+            //if the userid of thing is the same
+            //as user form the token
+            if(sauce.userId !== req.auth.userId) {
             //return;
             res.status(400).json({
                 error: new Error('unauthorized request!')
             })
-          }
-          Sauce.deleteOne({ _id: req.params.id }).then(
+            }
+            Sauce.deleteOne({ _id: req.params.id }).then(
             () => {
                 res.status(200).json({
                     message: 'sauce deleted!'
@@ -86,10 +94,13 @@ exports.deleteSauce = (req, res, next) => {
                         error: error
                     });
                 }
-            );  
-        }
-    )
+            ) 
+        })
+    });
 }
+     
+
+
 
 //retrieve a list
 exports.SaucesList = (req, res, next) => {
@@ -107,7 +118,7 @@ exports.SaucesList = (req, res, next) => {
 }
 
 /*
-** !! BUG - cannot edit, or assign correctly usersLiked / disLiked !!
+//need to add to mongoDB
 */
 
 exports.sauceLike = (req, res, next) => {
