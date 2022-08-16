@@ -1,5 +1,7 @@
 const Sauce = require('../models/sauces');
 const fs = require('fs');
+const { db }   = require('../models/sauces');
+const user = require('../models/user');
 
 //save a new sauce 
 exports.createSauce = (req, res, next) => {
@@ -19,8 +21,8 @@ exports.createSauce = (req, res, next) => {
         dislikes: req.body.likes,
         imageUrl: url + '/images/' + req.file.filename,
         mainPepper: req.body.sauce.mainPepper,
-        usersLiked: req.body.usersLiked,
-        usersDisliked: req.body.usersDisliked,
+        usersLiked: req.body.sauce.usersLiked,
+        usersDisliked: req.body.sauce.usersDisliked,
         userId: req.body.sauce.userId
     });
     newSauce.save().then(
@@ -56,7 +58,7 @@ exports.getOneSauce = (req, res, next) => {
             });
         }
     );
-}
+};
 
 
 //delete
@@ -121,6 +123,7 @@ exports.SaucesList = (req, res, next) => {
 //need to add to mongoDB
 */
 
+
 exports.sauceLike = (req, res, next) => {
     //get one sauce using param_id
     Sauce.findOne({_id: req.params.id}).then(
@@ -129,21 +132,34 @@ exports.sauceLike = (req, res, next) => {
             console.log('Got Body:', req.body); // working
             if (req.body.like === -1 && !sauce.usersDisliked.includes(req.body.userId)) {
                 sauce.usersDisliked.push(sauce.userId); //working
+                sauce.dislikes += 1
                 console.log('like = -1:', sauce);
                 res.status(200).json(sauce);
+
             } else if (req.body.like === 1 && !sauce.usersLiked.includes(req.body.userId)) {
                 sauce.usersLiked.push(sauce.userId); //working
+                sauce.likes += 1
                 console.log('like = 1:', sauce);
                 res.status(200).json(sauce);
-            } else if (req.body.like === 0) {
+
+            //} else if ( req.body.like === 0 && sauce.usersLiked.some(userId => userId === req.body.sauce)) {
+            } else if ( req.body.like === 0 && sauce.usersLiked.includes(req.body.sauce)) {
+                console.log('srg');
+                const index = sauce.usersLiked.findIndex(userId => userId === req.body.userId)
+                sauce.usersLiked.splice(index, 1);
+                sauce.likes -= 1;
                 res.status(200).json(sauce);
+
+            } else if (sauce.usersDisliked.some(userId => userId === req.body.userId)) {
                 console.log('will be deleted', sauce);
+            
             } else {
                 console.log('error');
             }
         }
     )
 }
+
 
 //sauce modify
 
