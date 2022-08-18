@@ -1,6 +1,6 @@
 const Sauce = require('../models/sauces');
-const fs = require('fs');
-const { db }   = require('../models/sauces');
+const fs = require('fs'); // file system - gives access to functions that allow you to modify the file system
+const { db, updateOne }   = require('../models/sauces');
 const user = require('../models/user');
 
 //save a new sauce 
@@ -13,16 +13,17 @@ exports.createSauce = (req, res, next) => {
     //req protocal, http, create the string
     const url = req.protocol + '://' + req.get('host');
     const newSauce = new Sauce({
+        //_id: req.body.sauce._id,
         name: req.body.sauce.name,
         manufacturer: req.body.sauce.manufacturer,
         description: req.body.sauce.description,
         heat: req.body.sauce.heat,
-        likes: req.body.likes,
-        dislikes: req.body.likes,
+        likes: 0,
+        dislikes: 0,
         imageUrl: url + '/images/' + req.file.filename,
         mainPepper: req.body.sauce.mainPepper,
-        usersLiked: req.body.sauce.usersLiked,
-        usersDisliked: req.body.sauce.usersDisliked,
+        usersLiked: [],
+        usersDisliked: [],
         userId: req.body.sauce.userId
     });
     newSauce.save().then(
@@ -65,7 +66,7 @@ exports.getOneSauce = (req, res, next) => {
 exports.deleteSauce = (req, res, next) => {
     //grab the thing from the database 
     //same as single get route
-    Sauce.findOne({ _id: req. params.id }).then(
+    Sauce.findOne({ _id: req. params.id }).then( //front end sends id
         (sauce) => {
         const filename = sauce.imageUrl.split('/images/')[1]; 
         fs.unlink('images/' + filename, () => {
@@ -119,46 +120,6 @@ exports.SaucesList = (req, res, next) => {
     );
 }
 
-/*
-//need to add to mongoDB
-*/
-
-
-exports.sauceLike = (req, res, next) => {
-    //get one sauce using param_id
-    Sauce.findOne({_id: req.params.id}).then(
-        //returns sauce
-        (sauce) => {
-            console.log('Got Body:', req.body); // working
-            if (req.body.like === -1 && !sauce.usersDisliked.includes(req.body.userId)) {
-                sauce.usersDisliked.push(sauce.userId); //working
-                sauce.dislikes += 1
-                console.log('like = -1:', sauce);
-                res.status(200).json(sauce);
-
-            } else if (req.body.like === 1 && !sauce.usersLiked.includes(req.body.userId)) {
-                sauce.usersLiked.push(sauce.userId); //working
-                sauce.likes += 1
-                console.log('like = 1:', sauce);
-                res.status(200).json(sauce);
-
-            //} else if ( req.body.like === 0 && sauce.usersLiked.some(userId => userId === req.body.sauce)) {
-            } else if ( req.body.like === 0 && sauce.usersLiked.includes(req.body.sauce)) {
-                console.log('srg');
-                const index = sauce.usersLiked.findIndex(userId => userId === req.body.userId)
-                sauce.usersLiked.splice(index, 1);
-                sauce.likes -= 1;
-                res.status(200).json(sauce);
-
-            } else if (sauce.usersDisliked.some(userId => userId === req.body.userId)) {
-                console.log('will be deleted', sauce);
-            
-            } else {
-                console.log('error');
-            }
-        }
-    )
-}
 
 
 //sauce modify
@@ -214,3 +175,66 @@ exports.updateSauce = (req, res, next) => {
         }
     );
 };
+
+
+/*
+//need to add to mongoDB
+*/
+
+exports.sauceLike = (req, res, next) => {
+    //get one sauce using param_id
+    Sauce.findOne({_id: req.params.id}).then(
+        //returns sauce
+        (sauce) => {
+            console.log('Got Body:', req.body); // working
+            if (req.body.like === -1 && !sauce.usersDisliked.includes(req.body.userId)) {
+                sauce.usersDisliked.push(sauce.userId); //working
+                sauce.dislikes ++;
+                //console.log(sauce.dislikes)
+                console.log('like = -1:', sauce);
+                res.status(200).json(sauce);
+
+            } else if (req.body.like === 1 && !sauce.usersLiked.includes(req.body.userId)) {
+                sauce.usersLiked.push(sauce.userId); //working
+                sauce.likes ++;
+                console.log('like = 1:', sauce);
+                res.status(200).json(sauce);
+
+            } else if ( req.body.like === 0) {
+
+                if (sauce.usersLiked.includes(req.body.userId)) {
+                    const index = sauce.usersLiked.findIndex(userId => userId === req.body.userId)
+                    sauce.usersLiked.splice(index, 1);
+                    sauce.likes --;
+                    res.status(200).json(sauce);
+                    console.log(sauce);
+
+                } else {
+                    const index = sauce.usersDisliked.findIndex(userId => userId === req.body.userId)
+                    sauce.usersDisliked.splice(index, 1);
+                    sauce.dislikes --;
+                    res.status(200).json(sauce); 
+                    console.log(sauce);
+
+                }
+            } else {
+                console.log('will be deleted', sauce);
+            }
+            
+        Sauce.updateOne({_id: req.params.id},  ).then(
+            () => {
+                res.status(201).json({
+                    message: 'sauce updated successfully!'
+                })
+            }
+        ).catch(
+            (error) => {
+                res.status(400).json({
+                    error: error
+                });
+            }
+        );
+    })
+}
+
+

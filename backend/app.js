@@ -3,19 +3,12 @@
 
 //import framework
 const express = require('express');
-
 const app = express();
-
-app.use(express.json());
-
-
-
-
 const mongoose = require('mongoose');
-//const sauces = require('./models/sauces');
-
-const saucesRoutes = require('./routes/sauces')
 const path = require('path');
+app.use(express.json());
+//const sauces = require('./models/sauces');
+const saucesRoutes = require('./routes/sauces')
 //import router into app
 const userRoutes = require('./routes/user');
 //const usersSchema = require('./models/user');

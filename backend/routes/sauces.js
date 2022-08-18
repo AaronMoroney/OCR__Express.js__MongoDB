@@ -7,7 +7,7 @@ const multer = require('../middleware/multer-config')
 
 
 //retrieve an array of sc
-router.get('/', auth, SauceCtrl.SaucesList); //working
+router.get('/', auth, SauceCtrl.SaucesList); 
 //saving new sauces to DB
 router.post('/', auth, multer, SauceCtrl.createSauce);
 //single sauce(findOne)
