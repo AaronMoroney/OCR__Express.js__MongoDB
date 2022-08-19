@@ -4,8 +4,6 @@ const auth = require('../middleware/auth');
 const SauceCtrl = require('../controllers/sauces');
 const multer = require('../middleware/multer-config')
 
-
-
 //retrieve an array of sc
 router.get('/', auth, SauceCtrl.SaucesList); 
 //saving new sauces to DB

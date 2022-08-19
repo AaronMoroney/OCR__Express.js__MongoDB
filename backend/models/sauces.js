@@ -1,8 +1,6 @@
 const mongoose = require('mongoose');
 //allows us to import sauceSchema(model) into the app
-//use to find, create etc.
 const sauceSchema = mongoose.Schema({
-    //_id: { type: String, required: true },
     name: { type: String, required: true },
     manufacturer: { type: String, required: true },
     description: { type: String, required: true },

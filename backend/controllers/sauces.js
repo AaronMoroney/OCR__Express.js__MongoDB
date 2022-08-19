@@ -1,19 +1,31 @@
 const Sauce = require('../models/sauces');
 const fs = require('fs'); // file system - gives access to functions that allow you to modify the file system
-const { db, updateOne }   = require('../models/sauces');
+const { db, updateOne, remove }   = require('../models/sauces'); //check?
 const user = require('../models/user');
+
+function removeIfItem(arr, value){
+    const index = arr.indexOf(value);
+    if(index > -1){
+      arr.splice(index,1);
+    }
+    return arr;
+}
+
+function findItem(arr, value){
+    const index = arr.indexOf(value);
+    if(index > -1){
+        return true;
+    }
+    return false;
+}
 
 //save a new sauce 
 exports.createSauce = (req, res, next) => {
     //because to send file, frontend sends as form, req.body.sauce
-    //is string, so we turn it into JSON
-    //parse now workable as JSON 
     req.body.sauce = JSON.parse(req.body.sauce);
-    //don't have rest of url for filename, onlny that of the img
     //req protocal, http, create the string
-    const url = req.protocol + '://' + req.get('host');
+    const url = req.protocol + '://' + req.get('host');   //don't have rest of url for filename, onlny that of the img
     const newSauce = new Sauce({
-        //_id: req.body.sauce._id,
         name: req.body.sauce.name,
         manufacturer: req.body.sauce.manufacturer,
         description: req.body.sauce.description,
@@ -27,8 +39,6 @@ exports.createSauce = (req, res, next) => {
         userId: req.body.sauce.userId
     });
     newSauce.save().then(
-        //front end res
-        //always when handling http req
         () => {
             res.status(201).json({
                 message: 'Post saved!'
@@ -42,7 +52,6 @@ exports.createSauce = (req, res, next) => {
        } 
     );
 }
-
 
 //find one sc
 exports.getOneSauce = (req, res, next) => {
@@ -61,7 +70,6 @@ exports.getOneSauce = (req, res, next) => {
     );
 };
 
-
 //delete
 exports.deleteSauce = (req, res, next) => {
     //grab the thing from the database 
@@ -72,15 +80,12 @@ exports.deleteSauce = (req, res, next) => {
         fs.unlink('images/' + filename, () => {
             //no such thing
             if (!sauce) {
-            //return;
             res.status(404).json({
                 error: new Error('no such thing')
             });
             }
-            //if the userid of thing is the same
-            //as user form the token
+            //if the userid of sc. as user form the token
             if(sauce.userId !== req.auth.userId) {
-            //return;
             res.status(400).json({
                 error: new Error('unauthorized request!')
             })
@@ -102,9 +107,6 @@ exports.deleteSauce = (req, res, next) => {
     });
 }
      
-
-
-
 //retrieve a list
 exports.SaucesList = (req, res, next) => {
     Sauce.find().then(
@@ -120,13 +122,9 @@ exports.SaucesList = (req, res, next) => {
     );
 }
 
-
-
 //sauce modify
-
 exports.updateSauce = (req, res, next) => {
-    //this new sauce is the sauce we want to pass 
-    //through the update sauce
+    //new sauce pass through the update sauce
     let sauce = new Sauce({_id: req.params._id});
     if (req.file) {
             const url = req.protocol + '://' + req.get('host');
@@ -176,65 +174,59 @@ exports.updateSauce = (req, res, next) => {
     );
 };
 
-
-/*
-//need to add to mongoDB
-*/
+//logic for like functionality
+function manageLikesAndDislikes(req, sauce){   
+    const userId = req.body.userId;
+    const userCurrentlyLike = findItem(sauce.usersLiked, req.body.userId);
+    const userCurrentlyDislike = findItem(sauce.usersDisliked, req.body.userId);
+    
+    const userPressLike = req.body.like == 1;
+    const userPressDislike = req.body.like == -1;
+    const userPressUnlikeOrDislike = req.body.like == 0;
+    //check
+    console.table(
+        {
+            userCurrentlyLike:userCurrentlyLike,
+            userCurrentlyDislike:userCurrentlyDislike,
+            userPressLike:userPressLike,
+            userPressDislike :userPressDislike,
+            userPressUnlikeOrDislike:userPressUnlikeOrDislike,
+            userId:userId
+        }
+    );
+    //add like
+    //add a dislike
+    //faizal - we don't need cirly brace here after the if statements?
+    if(userPressLike) sauce.usersLiked.push(userId) && sauce.likes++;
+    if(userPressDislike) sauce.usersDisliked.push(userId) && sauce.dislikes++; 
+    //remove like
+    //remove dislike
+    if(userPressUnlikeOrDislike && userCurrentlyLike) (sauce.usersLiked = removeIfItem(sauce.usersLiked, req.body.userId)) && sauce.likes--;
+    if(userPressUnlikeOrDislike && userCurrentlyDislike) (sauce.usersDisliked = removeIfItem(sauce.usersDisliked, req.body.userId)) && sauce.dislikes--;
+  
+    return sauce;  
+}
 
 exports.sauceLike = (req, res, next) => {
     //get one sauce using param_id
     Sauce.findOne({_id: req.params.id}).then(
-        //returns sauce
         (sauce) => {
-            console.log('Got Body:', req.body); // working
-            if (req.body.like === -1 && !sauce.usersDisliked.includes(req.body.userId)) {
-                sauce.usersDisliked.push(sauce.userId); //working
-                sauce.dislikes ++;
-                //console.log(sauce.dislikes)
-                console.log('like = -1:', sauce);
-                res.status(200).json(sauce);
-
-            } else if (req.body.like === 1 && !sauce.usersLiked.includes(req.body.userId)) {
-                sauce.usersLiked.push(sauce.userId); //working
-                sauce.likes ++;
-                console.log('like = 1:', sauce);
-                res.status(200).json(sauce);
-
-            } else if ( req.body.like === 0) {
-
-                if (sauce.usersLiked.includes(req.body.userId)) {
-                    const index = sauce.usersLiked.findIndex(userId => userId === req.body.userId)
-                    sauce.usersLiked.splice(index, 1);
-                    sauce.likes --;
-                    res.status(200).json(sauce);
-                    console.log(sauce);
-
-                } else {
-                    const index = sauce.usersDisliked.findIndex(userId => userId === req.body.userId)
-                    sauce.usersDisliked.splice(index, 1);
-                    sauce.dislikes --;
-                    res.status(200).json(sauce); 
-                    console.log(sauce);
-
+            console.log('Got Body:', req.body);
+            let processedSauce = manageLikesAndDislikes(req, sauce);
+            console.log(processedSauce); 
+            Sauce.updateOne({_id: req.params.id}, processedSauce ).then(
+                () => {
+                    res.status(201).json({
+                        message: 'sauce updated successfully!'
+                    })
                 }
-            } else {
-                console.log('will be deleted', sauce);
-            }
-            
-        Sauce.updateOne({_id: req.params.id},  ).then(
-            () => {
-                res.status(201).json({
-                    message: 'sauce updated successfully!'
-                })
-            }
-        ).catch(
-            (error) => {
-                res.status(400).json({
-                    error: error
-                });
-            }
-        );
-    })
+            ).catch(
+                (error) => {
+                    res.status(400).json({
+                        error: error
+                    });
+                }
+            );
+        }
+    )
 }
-
-

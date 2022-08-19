@@ -1,12 +1,8 @@
-//import bcrypt 
-const bcrypt = require('bcrypt');
-//import user model 
-const User = require('../models/user');
+const bcrypt = require('bcrypt'); //import bcrypt 
+const User = require('../models/user'); //import user model 
 const jwt = require('jsonwebtoken');
-
 //signup
 exports.signup = (req, res, next) => {
-    //firsr argument = data, 2 argument
     //12 = number of salting iteration
     bcrypt.hash(req.body.password, 10).then(
         (hash) => {
@@ -71,5 +67,6 @@ exports.login = (req, res, next) => {
             res.status(500).json({
                 error: error
             })
-        })
+        }
+    )
 }
