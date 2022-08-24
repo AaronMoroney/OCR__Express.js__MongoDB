@@ -3,6 +3,14 @@ const fs = require('fs'); // file system - gives access to functions that allow 
 const { db, updateOne, remove }   = require('../models/sauces'); //check?
 const user = require('../models/user');
 
+function siteUrl(req) {
+    return req.protocol + '://' + req.get('host');
+}
+
+function sauceImageUrl(req) {
+    return siteUrl(req) + '/images/' + req.file.filename;
+}
+
 function removeIfItem(arr, value){
     const index = arr.indexOf(value);
     if(index > -1){
@@ -22,21 +30,20 @@ function findItem(arr, value){
 //save a new sauce 
 exports.createSauce = (req, res, next) => {
     //because to send file, frontend sends as form, req.body.sauce
-    req.body.sauce = JSON.parse(req.body.sauce);
+    let sauce = JSON.parse(req.body.sauce);
     //req protocal, http, create the string
-    const url = req.protocol + '://' + req.get('host');   //don't have rest of url for filename, onlny that of the img
     const newSauce = new Sauce({
-        name: req.body.sauce.name,
-        manufacturer: req.body.sauce.manufacturer,
-        description: req.body.sauce.description,
-        heat: req.body.sauce.heat,
+        name: sauce.name,
+        manufacturer: sauce.manufacturer,
+        description: sauce.description,
+        heat: sauce.heat,
         likes: 0,
         dislikes: 0,
-        imageUrl: url + '/images/' + req.file.filename,
-        mainPepper: req.body.sauce.mainPepper,
+        imageUrl: sauceImageUrl(req),
+        mainPepper: sauce.mainPepper,
         usersLiked: [],
         usersDisliked: [],
-        userId: req.body.sauce.userId
+        userId: sauce.userId
     });
     newSauce.save().then(
         () => {
@@ -78,7 +85,6 @@ exports.deleteSauce = (req, res, next) => {
         (sauce) => {
         const filename = sauce.imageUrl.split('/images/')[1]; 
         fs.unlink('images/' + filename, () => {
-            //no such thing
             if (!sauce) {
             res.status(404).json({
                 error: new Error('no such thing')
@@ -125,39 +131,14 @@ exports.SaucesList = (req, res, next) => {
 //sauce modify
 exports.updateSauce = (req, res, next) => {
     //new sauce pass through the update sauce
-    let sauce = new Sauce({_id: req.params._id});
+    console.log('checking', req.body);
+    console.log('checking Typeof', req.body.sauce);
+    let sauce;
     if (req.file) {
-            const url = req.protocol + '://' + req.get('host');
-            req.body.sauce = JSON.stringify(req.body.sauce);
-            sauce = ({
-            _id: req.params.id,
-            name: req.body.sauce.name,
-            manufacturer: req.body.sauce.manufacturer,
-            description: req.body.sauce.description,
-            heat: req.body.sauce.heat,
-            likes: req.body.sauce.likes,
-            dislikes: req.body.sauce.likes,
-            imageUrl: url + '/images/' + req.file.filename,
-            mainPepper: req.body.sauce.mainPepper,
-            usersLiked: req.body.sauce.usersLiked,
-            usersDisliked: req.body.sauce.usersDisliked,
-            userId: req.body.sauce.userId
-        });
+        sauce = JSON.parse(req.body.sauce);
+        sauce.imageUrl = sauceImageUrl(req);
     } else {
-            sauce = ({
-            _id: req.params.id,
-            name: req.body.name,
-            manufacturer: req.body.manufacturer,
-            description: req.body.description,
-            heat: req.body.heat,
-            likes: req.body.likes,
-            dislikes: req.body.likes,
-            imageUrl: req.body.imageUrl,
-            mainPepper: req.body.mainPepper,
-            usersLiked: req.body.usersLiked,
-            usersDisliked: req.body.usersDisliked,
-            userId: req.body.userId
-        });
+        sauce = req.body;
     }
     Sauce.updateOne({_id: req.params.id}, sauce).then(
         () => {
@@ -179,7 +160,6 @@ function manageLikesAndDislikes(req, sauce){
     const userId = req.body.userId;
     const userCurrentlyLike = findItem(sauce.usersLiked, req.body.userId);
     const userCurrentlyDislike = findItem(sauce.usersDisliked, req.body.userId);
-    
     const userPressLike = req.body.like == 1;
     const userPressDislike = req.body.like == -1;
     const userPressUnlikeOrDislike = req.body.like == 0;
@@ -196,7 +176,6 @@ function manageLikesAndDislikes(req, sauce){
     );
     //add like
     //add a dislike
-    //faizal - we don't need cirly brace here after the if statements?
     if(userPressLike) sauce.usersLiked.push(userId) && sauce.likes++;
     if(userPressDislike) sauce.usersDisliked.push(userId) && sauce.dislikes++; 
     //remove like
